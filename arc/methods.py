@@ -2,6 +2,8 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import KFold
 from scipy.stats.mstats import mquantiles
+from scipy.optimize import minimize
+from sklearn.ensemble import RandomForestRegressor
 import sys
 from tqdm import tqdm
 
@@ -212,3 +214,135 @@ class SplitConformal:
         grey_box = ProbAccum(p_hat)
         S_hat = grey_box.predict_sets(self.alpha_calibrated, epsilon=epsilon, allow_empty=self.allow_empty)
         return S_hat
+
+def H(p, eps=.0001):
+    return -sum([s * np.log(s + eps) for s in p])
+
+def sigma(t):
+    return 1/(np.exp(-t) + 1)
+
+def quantile(v, alpha):
+    m = int(np.ceil((1 - alpha) * (len(v) + 1))) - 1
+    v = np.sort(v, axis = 0)
+    return v[m]
+
+class SplitConformalTransform:
+    def __init__(self, X, Y, black_box, alpha, obj='ML', rho=0.1, random_state=2020, allow_empty=True, verbose=False):
+        self.allow_empty = allow_empty
+
+        # Split data into training/calibration sets
+        X_train, X_calib, Y_train, Y_calib = train_test_split(X, Y, test_size=0.5, random_state=random_state, stratify=Y)
+        n2 = X_calib.shape[0]
+    
+        self.K = len(set(Y))
+        self.n = len(Y_train)
+        self.alpha = alpha
+        self.rho = rho
+        self.black_box = black_box
+        self.X_calib = X_calib; self.Y_calib = Y_calib
+        self.X_train = X_train; self.Y_train = Y_train
+
+        # Fit model
+        self.black_box.fit(X_train, Y_train)
+
+        # Form prediction sets on calibration data
+        p_hat_calib = self.black_box.predict_proba(X_calib)
+        self.rg = self.approximator(p_hat_calib, X_train, Y_train)
+        
+        if obj == 'ML': 
+            self.obj = self.ML
+            self.theta = self.fitTransformation(p_hat_calib, X_train, Y_train)
+        if obj == 'size': 
+            self.obj = self.smoothSize
+            self.theta = self.fitTransformation(p_hat_calib, X_train, Y_train)
+        if obj == 'unweighted': 
+            self.obj = None
+            self.theta = numpy.zeros(10)
+    
+    def predict(self, X_test):
+        X, y = self.X_calib, self.Y_calib
+        X, A, G, h = self.prepareData(self.black_box.predict_proba(X), X)
+        B = self.b(A, G, h, self.theta)
+        q = quantile([B[i, y[i]] for i in range(len(y))], self.alpha)
+        
+        X = X_test
+        X, A, G, h = self.prepareData(self.black_box.predict_proba(X), X)
+        B = self.b(A, G, h, self.theta)
+        sets = [[m for m in range(self.K) if B[i][m] < q] for i in range(X.shape[0])]
+        return sets
+#         F1 = F1score(sets, y)
+#         sizes = numpy.sum([len(sets[i]) for i in range(len(sets))])/len(y)
+#         val = numpy.sum([1 for i in range(len(y)) if y[i] in sets[i]])/len(y)
+#         return sizes, F1, val
+        
+    def basicScore(self, prob):
+        return 1 - prob
+
+    def approximator(self, prob, X, y):
+        A = self.basicScore(prob)
+        a = [A[i, y[i]] for i in range(self.n)]
+        rf = []
+        for m in range(self.K): 
+            rf.append(RandomForestRegressor(max_depth=25, random_state=0))
+            xm = np.array([X[i] for i in range(self.n) if y[i] == m])
+            am = np.array([a[i] for i in range(self.n) if y[i] == m])
+            rf[-1].fit(xm, am.squeeze())
+        return rf    
+    
+    def fitTransformation(self, prob, X, y):
+        d1 = self.prepareData(prob, X), y
+        initial_guess =  .1 * np.random.randn(10)
+        optimal = minimize(self.obj, initial_guess,
+                args=(d1, d1), options={'maxiter': 1000}, tol = 1e-3)
+        print('status, nit, theta: ', optimal.success, optimal.nit, optimal.x)
+        return optimal.x
+ 
+    def ML(self, theta, d1, d2):
+        [X1, A1, G1, h1], y1 = d1
+        [X2, A2, G2, h2], y2 = d2
+        B1 = self.b(A1, G1, h1, theta)
+        b1 = np.array([B1[i, y1[i]] for i in range(self.n)])
+        b1 = np.expand_dims(b1, axis = 1)
+        B2 = self.b(A2, G2, h2, theta)
+        b2 = np.array([B2[i, y2[i]] for i in range(self.n)])
+        b2 = np.expand_dims(b2, axis = 1)
+        M = b1 - b2.transpose()
+        m = np.linalg.norm(M - np.diag(np.diag(M))) 
+        ell = m/self.n
+        return ell + self.rho * theta @ theta
+    
+    def smoothSize(self, theta, d1, d2, scale = 2):
+        [X1, A1, G1, h1], y1 = d1
+        [X2, A2, G2, h2], y2 = d2
+        beta = 2
+        B1 = self.b(A1, G1, h1, theta)
+        B2 = self.b(A2, G2, h2, theta)
+        b2 = np.array([B2[i2, y2[i2]] for i2 in range(self.n)])
+        w = b2/sum(b2)
+        w = np.exp(beta * w) + 1e-4
+        w = np.diag(w / sum(w))
+        B1 = np.expand_dims(B1, axis = 2)
+        B1 = np.transpose(B1, axes = [0, 2, 1])
+        b2 = np.array(b2)
+        b2 = np.expand_dims(b2, axis = [0, 2])
+        S = np.sum(sigma(scale * (-(B1 - b2))), axis = 2)
+        ell = 1/self.n * numpy.sum(S @ w)
+        return ell + self.rho * theta @ theta
+    
+    def prepareData(self, prob, X):
+        A = self.basicScore(prob)
+        G = np.array([self.rg[i].predict(X) for i in range(self.K)]).transpose()
+        h = np.array([H(1 - G[i, :]).squeeze() for i in range(X.shape[0])])
+        return X, A, G, h
+
+    def r(self, t, G, h):
+        h = np.expand_dims(h, axis=1)
+        r1, r2 = [t[0 + i] + 
+                t[2 + i] * np.power(abs(G), t[4 + i]) + 
+                t[6 + i] * np.power(abs(h), t[8+ i]) for i in [0, 1]]
+        return r1, r2
+    
+    def b(self, A, G, h, theta):
+        r1, r2 = self.r(theta, G, h)
+        return A * np.exp(-r1) - r2 
+    
