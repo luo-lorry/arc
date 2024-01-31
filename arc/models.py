@@ -78,4 +78,4 @@ class Model_Ex2:
         g = np.array([np.random.multinomial(1,prob_y[i]) for i in range(X.shape[0])], dtype = float)
         classes_id = np.arange(self.K)
         y = np.array([np.dot(g[i],classes_id) for i in range(X.shape[0])], dtype = int)
-        return y.astype(np.int)
+        return y.astype(int)

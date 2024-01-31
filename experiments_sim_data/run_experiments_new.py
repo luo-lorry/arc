@@ -22,9 +22,39 @@ def assess_predictions(S, X, y):
     length_cover = np.mean([len(S[i]) for i in idx_cover])
     # Conditional coverage (WSC)
     cond_coverage = arc.coverage.wsc_unbiased(X, y, S)
+    # F1 score
+    def F1CPscore(sets, y):
+        mclasses = len(set(y))
+        TP, FP, TN, FN = [[0 for m in range(mclasses)] for k in [0, 1, 2, 3]]
+        for i in range(len(sets)):
+            interval = sets[i]
+            positives = [j for j in range(mclasses) if j in interval]
+            negatives = [j for j in range(mclasses) if j not in interval]
+            for m in range(mclasses):
+                TP[m] = TP[m] + 1 * (m in positives) * (y[i] == m)# in positives)
+                FP[m] = FP[m] + 1 * (m in positives) * (y[i] != m)# in negatives)
+                TN[m] = TN[m] + 1 * (m in negatives) * (y[i] !=m)# in negatives) 
+                FN[m] = FN[m] + 1 * (m in negatives) * (y[i] == m)# in positives) 
+        F1cp = np.prod([2 * TP[m]/(2 * TP[m] + FP[m] + FN[m]) for m in  range(mclasses)])
+        return F1cp
+    def F1score(sets, y):
+        TP, FP, TN, FN = 0, 0, 0, 0
+        mclasses = len(set(y))
+        for i in range(len(sets)):
+            interval = sets[i]
+            positives = [j for j in range(mclasses) if j in interval]
+            negatives = [j for j in range(mclasses) if j not in interval]
+            TP = TP + sum([1 for j in positives if j == y[i]])
+            FP = FP + sum([1 for j in positives if j != y[i]])
+            TN = TN + sum([1 for j in negatives if j != y[i]])  
+            FN = FN + sum([1 for j in negatives if j == y[i]]) 
+        F1 = 2 * TP/(2 * TP + FP + FN)
+        return F1
+    F1 = F1score(S, y)
     # Combine results
     out = pd.DataFrame({'Coverage': [coverage], 'Conditional coverage': [cond_coverage],
-                        'Length': [length], 'Length cover': [length_cover]})
+                        'Length': [length], 'Length cover': [length_cover], 
+                        'F1': [F1]})
     return out
 
 def collect_predictions(S, X, y, condition_on):
@@ -81,8 +111,12 @@ def run_experiment(data_model, n_train, methods, black_boxes, condition_on,
             sys.stdout.flush()
 
             # Train classification method
-            method = methods[method_name](X_train, y_train, black_box, alpha, random_state=random_state,
-                                          verbose=True)
+            try:
+                method = methods[method_name](X_train, y_train, black_box, alpha, random_state=random_state,
+                                              verbose=True, box_name=box_name)
+            except:
+                method = methods[method_name][0](X_train, y_train, black_box, alpha, random_state=random_state,
+                                              model=methods[method_name][1], verbose=True, box_name=box_name)
             # Apply classification method
             S = method.predict(X_test)
 
@@ -107,8 +141,8 @@ def run_experiment(data_model, n_train, methods, black_boxes, condition_on,
             res_full['n_test'] = n_test
 
             # Add results to the list
-            results = results.append(res)
-            results_full = results_full.append(res_full)
+            results = pd.concat([results, res]) # results.append(res)
+            results_full = pd.concat([results_full, res]) # results_full.append(res_full)
 
             # Write results on output files
             if len(out_files) == 2:
@@ -125,54 +159,61 @@ if __name__ == '__main__':
     print ('Number of arguments:', len(sys.argv), 'arguments.')
     print ('Argument List:', str(sys.argv))
     model_num = 1
-    if len(sys.argv) != 5:
-        quit()
-    model_num = int(sys.argv[1])
-    exp_num = int(sys.argv[2])
-    alpha = float(sys.argv[3])
-    n_train = int(sys.argv[4])
+    out_dir = "/Users/lorry/Documents/20240125 conformal prediction/arc_new/arc/results"
+    import itertools
+    for model_num, exp_num, alpha, n_train in itertools.product([0], np.arange(5), [0.1], [10000]):
+        # sys.argv = [out_dir, 0, 0, 0.1, 10000]
+        # if len(sys.argv) != 5:
+        #     quit()
+        # model_num = int(sys.argv[1])
+        # exp_num = int(sys.argv[2])
+        # alpha = float(sys.argv[3])
+        # n_train = int(sys.argv[4])
 
-    # Determine output file
-    out_file_1 = "{}/model{}_exp{}_alpha{}_n{}_summary.txt".format(out_dir, model_num, exp_num, alpha, n_train)
-    out_file_2 = "{}/model{}_exp{}_alpha{}_n{}_full.txt".format(out_dir, model_num, exp_num, alpha, n_train)
-    out_files = [out_file_1, out_file_2]
-    print(out_files)
+        # Determine output file
+        out_file_1 = "{}/model{}_exp{}_alpha{}_n{}_summary.txt".format(out_dir, model_num, exp_num, alpha, n_train)
+        out_file_2 = "{}/model{}_exp{}_alpha{}_n{}_full.txt".format(out_dir, model_num, exp_num, alpha, n_train)
+        out_files = [out_file_1, out_file_2]
+        print(out_files)
 
-    # Random state for this experiment
-    random_state = 2020 + exp_num
+        # Random state for this experiment
+        random_state = 2020 + exp_num
 
-    # Define data model
-    np.random.seed(random_state)
-    if model_num == 1:
-        K = 10
-        p = 10
-        data_model = arc.models.Model_Ex1(K,p)
-    else:
-        K = 4
-        p = 5
-        data_model = arc.models.Model_Ex2(K,p)
+        # Define data model
+        np.random.seed(random_state)
+        if model_num == 1:
+            K = 10
+            p = 10
+            data_model = arc.models.Model_Ex1(K,p)
+        else:
+            K = 4
+            p = 5
+            data_model = arc.models.Model_Ex2(K,p)
 
-    # List of calibration methods to be compared
-    methods = {
-        'SC':  arc.methods.SplitConformal,
-        'SC+': arc.methods.SplitConformalTransform,
-        'HCC': arc.others.SplitConformalHomogeneous,
-#         'CQC': arc.others.CQC
-    }
+        # List of calibration methods to be compared
+        methods = {
+    #         'ARC':  arc.methods.SplitConformal,
+    #         'LRC(HR)': (arc.methods.SplitConformalTransform, 'HR'),
+            'LRC(HR)': (arc.methods.SplitConformalTransform, 'ER'),
+    #         'LR': arc.methods.SplitConformalEntropy,
+            'LRC(base)': (arc.methods.SplitConformalTransform, 'unweighted'),
+    #         'HCC': arc.methods.SplitConformalHomogeneous,
+    #         'CQC': arc.others.CQC
+        }
 
-    # List of black boxes to be compared
-    black_boxes = {
-                   'Oracle': arc.black_boxes.Oracle(data_model),
-                   'SVC': arc.black_boxes.SVC(clip_proba_factor = 1e-5, random_state=random_state),
-                   'RFC': arc.black_boxes.RFC(clip_proba_factor = 1e-5, 
-                                              n_estimators=1000, max_depth=5, max_features=None,
-                                              random_state=random_state)
-                  }
+        # List of black boxes to be compared
+        black_boxes = {
+    #                    'Oracle': arc.black_boxes.Oracle(data_model),
+                       'SVC': arc.black_boxes.SVC(clip_proba_factor = 1e-5, random_state=random_state),
+                       'RFC': arc.black_boxes.RFC(clip_proba_factor = 1e-5,
+                                                  n_estimators=1000, max_depth=5, max_features=None,
+                                                  random_state=random_state)
+                      }
 
-    # Which special variables should we condition on to compute conditional coverage?
-    condition_on = [0]
+        # Which special variables should we condition on to compute conditional coverage?
+        condition_on = [0]
 
-    # Run experiments
-    run_experiment(data_model, n_train, methods, black_boxes, condition_on,
-                   alpha=alpha, experiment=exp_num, random_state=random_state,
-                   out_files=out_files)
+        # Run experiments
+        run_experiment(data_model, n_train, methods, black_boxes, condition_on,
+                       alpha=alpha, experiment=exp_num, random_state=random_state,
+                       out_files=out_files)

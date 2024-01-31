@@ -43,3 +43,16 @@ class ProbabilityAccumulator:
             alpha_max += prob
         alpha_max = np.minimum(alpha_max, 1)
         return alpha_max
+
+    def calibrate_scores_approximator(self, epsilon=None):
+        # return self.Z
+        g = np.zeros((self.n, self.K))
+        for i in range(self.n):
+            for k in range(self.K):
+                rank = self.ranks[i, k]
+                prob_cum = self.Z[i, rank]
+                g[i, k] = prob_cum
+        return g
+        # ranks = np.array([[self.ranks[i,k] for k in range(self.K)] for i in range(self.n)])
+        # prob_cum = self.Z[ranks] # np.array([ self.Z[i,ranks[i]] for i in range(n2) ])
+        # return prob_cum
