@@ -230,19 +230,21 @@ class MnistClassifierConformal(nn.Module):
         x_calib = torch.cat(self.cal_data.dataset[0], dim=0)
         y_calib = torch.cat(self.cal_data.dataset[1], dim=0)
         logits = self.forward(x_calib)
+        logits = torch.softmax(logits, dim=1)
         # logits = logits / uncertainty(logits, method=self.uncertainty_method)[:, None] # entropy(nn.functional.softmax(logits, dim=1))[:, None]
         # p_y_calib = torch.Tensor([logits[i, y_calib[i]] for i in range(len(y_calib))])
-        probs = torch.softmax(logits, dim=1) / uncertainty(logits, method=self.uncertainty_method)[:, None] # entropy(nn.functional.softmax(logits, dim=1))[:, None]
-        p_y_calib = torch.Tensor([probs[i, y_calib[i]] for i in range(len(y_calib))])
+        # probs = torch.softmax(logits, dim=1) / uncertainty(logits, method=self.uncertainty_method)[:, None] # entropy(nn.functional.softmax(logits, dim=1))[:, None]
+        p_y_calib = torch.Tensor([logits[i, y_calib[i]] for i in range(len(y_calib))])
         level_adjusted = (1.0 - self.alpha) * (1.0 + 1.0 / float(len(y_calib)))
         self.threshold_calibrated = torch.FloatTensor(mquantiles(p_y_calib, prob=1.0 - level_adjusted))
         logit = self.forward(X)
+        logit = torch.softmax(logit, dim=1)
         # logit = logit / uncertainty(logit, method=self.uncertainty_method)[:, None]
-        prob = torch.softmax(logit, dim=1) / uncertainty(logit, method=self.uncertainty_method)[:, None]
+        # prob = torch.softmax(logit, dim=1) / uncertainty(logit, method=self.uncertainty_method)[:, None]
         if cal_loader != None:
             S_hat = torch.zeros_like(logit)
             for i in range(S_hat.shape[0]):
-                S_hat[i][torch.where(prob[i, :] >= self.threshold_calibrated)[0]] = 1
+                S_hat[i][torch.where(logit[i, :] >= self.threshold_calibrated)[0]] = 1
         # else:
         #     S_hat = nn.functional.sigmoid(logit - self.threshold_calibrated)
         return S_hat
@@ -283,7 +285,7 @@ class MnistClassifierConformal(nn.Module):
 def train_model(alpha=0.1, uncertainty_method='entropy', cover_transform_fn=torch.square, size_transform_fn=torch.log1p, random_state=2024):
     train_subset, val_subset, cal_subset, test_subset, left_subset = torch.utils.data.random_split(
         datasets.FashionMNIST('data', train=True, download=True, transform=transforms.ToTensor()),
-        [20000, 2000, 20000, 2000, 16000], generator=torch.Generator().manual_seed(random_state))
+        [20000, 1000, 30000, 1000, 8000], generator=torch.Generator().manual_seed(random_state))
 
     train_loader = torch.utils.data.DataLoader(dataset=train_subset, shuffle=False, batch_size=100)
     val_loader = torch.utils.data.DataLoader(dataset=val_subset, shuffle=False, batch_size=len(val_subset.indices))
@@ -323,9 +325,9 @@ def run_experiment(out_dir):
         results = pd.DataFrame()
     # List of calibration methods to be compared
     methods = ['baseline', 'reweighting']
-    uncertainty_methods = ['entropy'] #, 'gini']
+    uncertainty_methods = ['entropy', 'gini']
     alphas = [0.05, 0.1, 0.2]
-    experiments = np.arange(5)
+    experiments = np.arange(10)
     for alpha in alphas:
         for experiment in experiments:
             for uncertainty_method in uncertainty_methods:
