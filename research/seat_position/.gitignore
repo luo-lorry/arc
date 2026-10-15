@@ -2,3 +2,4 @@ data/prices/
 data/seat_rows.csv.gz
 data/sina/
 data/shfe/
+data/shfe_compact/
