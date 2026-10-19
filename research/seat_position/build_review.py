@@ -20,6 +20,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import sys
 import time
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -682,6 +683,7 @@ def html_page(mains: pd.DataFrame, day: str, has_seats: bool) -> str:
     </div>
     {seat_block}
     <p>扫描和四象限来自上期所（含能源中心）、郑商所、中金所每日行情，大商所和广期所来自新浪日线。席位来自交易所公布的会员持仓排名。持仓变化相对上一交易日。休市日页面留着上一个交易日。</p>
+    <p>发给客户、也请客户收藏的固定链接是 <a href="https://luo-lorry.github.io/arc/">https://luo-lorry.github.io/arc/</a>。不要收藏带日期的这一页，带日期的地址只保留 {day}。</p>
   </main>
 </body>
 </html>
@@ -704,7 +706,7 @@ def check_known_day(mains: pd.DataFrame, day: str) -> None:
         print(f"CHECK BR2611 rank is {rank}, expected 1 on this tape")
 
 
-def build(day: str, skip_seats: bool) -> None:
+def build(day: str, skip_seats: bool) -> bool:
     quotes = quote_table(day)
     mains = main_contracts(quotes)
     folder = OUT / day
@@ -723,25 +725,75 @@ def build(day: str, skip_seats: bool) -> None:
     (folder / "index.html").write_text(page, encoding="utf-8")
     # The stable link is what a buyer bookmarks. Replace it only when the
     # seat boards are in, so a late ranking feed cannot wipe yesterday's page.
+    # index.html is a short loader. It reads latest.json on every open, so a
+    # phone that cached yesterday's shell still lands on the new trading day.
     if has_seats:
-        (OUT / "index.html").write_text(page, encoding="utf-8")
+        (OUT / "latest.json").write_text(
+            json.dumps({"day": day}, ensure_ascii=False) + "\n", encoding="utf-8"
+        )
+        (OUT / "index.html").write_text(stable_loader(day), encoding="utf-8")
         for name in ("cover.png", "scan.png", "quadrants.png", "retail.png", "inst.png", "foreign.png"):
             src = folder / name
             if src.exists():
                 (OUT / name).write_bytes(src.read_bytes())
+        print(f"stable link now opens {day}")
     else:
         print("seats missing, left the stable link on the previous complete day")
     check_known_day(mains, day)
     print(f"products {len(mains)} wrote {folder}")
     print(mains.head(10)[["rank", "code", "close", "px", "oi_pct", "score", "tag"]].to_string(index=False))
+    return has_seats
+
+
+def stable_loader(day: str) -> str:
+    """Bookmark this file. Each open asks latest.json which day to show."""
+    return f"""<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>期货盘后复盘</title>
+  <style>
+    body {{ margin: 0; background: #071222; color: #e8eef5; font-family: "PingFang SC", "Noto Sans SC", sans-serif; }}
+    main {{ max-width: 560px; margin: 0 auto; padding: 48px 16px; }}
+    a {{ color: #7fd1ff; }}
+    p {{ color: #9db0c4; line-height: 1.6; }}
+  </style>
+</head>
+<body>
+  <main>
+    <p>正在打开最近一个交易日的复盘。休市日打开上一个交易日。</p>
+    <p><a id="go" href="{day}/index.html">打开 {day}</a></p>
+  </main>
+  <script>
+    fetch("latest.json?t=" + Date.now(), {{cache: "no-store"}})
+      .then(function (response) {{ return response.json(); }})
+      .then(function (data) {{
+        var url = data.day + "/index.html";
+        var link = document.getElementById("go");
+        link.href = url;
+        link.textContent = "打开 " + data.day;
+        location.replace(url);
+      }});
+  </script>
+</body>
+</html>
+"""
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--date", default="2026-09-24")
     parser.add_argument("--skip-seats", action="store_true")
+    parser.add_argument(
+        "--require-seats",
+        action="store_true",
+        help="exit 2 when the stable link was left on the previous day",
+    )
     args = parser.parse_args()
-    build(args.date, args.skip_seats)
+    updated = build(args.date, args.skip_seats)
+    if args.require_seats and not updated:
+        sys.exit(2)
 
 
 if __name__ == "__main__":

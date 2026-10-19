@@ -1,4 +1,5 @@
 data/prices/
+data/quotes/
 data/seat_rows.csv.gz
 data/sina/
 data/shfe/
