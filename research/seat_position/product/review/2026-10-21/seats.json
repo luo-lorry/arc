@@ -1,0 +1,397 @@
+{
+  "date": "2026-10-21",
+  "n_main": 75,
+  "n_with_rank": 68,
+  "boards": [
+    {
+      "key": "retail",
+      "title": "三大家人",
+      "blurb": "散户喜欢扛单，尤其是逆势扛单",
+      "listed": 86,
+      "add": [
+        {
+          "side": "加多",
+          "org": "平安期货",
+          "label": "玉米 C2701",
+          "change": 4228
+        },
+        {
+          "side": "加多",
+          "org": "平安期货",
+          "label": "菜粕 RM2701",
+          "change": 2399
+        },
+        {
+          "side": "加空",
+          "org": "平安期货",
+          "label": "热轧卷板 HC2701",
+          "change": 2338
+        },
+        {
+          "side": "加空",
+          "org": "平安期货",
+          "label": "玻璃 FG2701",
+          "change": 1759
+        },
+        {
+          "side": "加空",
+          "org": "平安期货",
+          "label": "甲醇 MA2701",
+          "change": 1376
+        },
+        {
+          "side": "加空",
+          "org": "平安期货",
+          "label": "10年国债 T2612",
+          "change": 1158
+        },
+        {
+          "side": "加空",
+          "org": "平安期货",
+          "label": "淀粉 CS2701",
+          "change": 1129
+        },
+        {
+          "side": "加多",
+          "org": "徽商期货",
+          "label": "烧碱 SH2701",
+          "change": 1082
+        },
+        {
+          "side": "加多",
+          "org": "平安期货",
+          "label": "甲醇 MA2701",
+          "change": 1068
+        },
+        {
+          "side": "加空",
+          "org": "平安期货",
+          "label": "锰硅 SM2701",
+          "change": 973
+        }
+      ],
+      "cut": [
+        {
+          "side": "减多",
+          "org": "平安期货",
+          "label": "玻璃 FG2701",
+          "change": -1625
+        },
+        {
+          "side": "减空",
+          "org": "平安期货",
+          "label": "菜粕 RM2701",
+          "change": -1366
+        },
+        {
+          "side": "减多",
+          "org": "徽商期货",
+          "label": "纯碱 SA2701",
+          "change": -1328
+        },
+        {
+          "side": "减多",
+          "org": "平安期货",
+          "label": "豆二 B2611",
+          "change": -1239
+        },
+        {
+          "side": "减多",
+          "org": "徽商期货",
+          "label": "热轧卷板 HC2701",
+          "change": -916
+        },
+        {
+          "side": "减多",
+          "org": "徽商期货",
+          "label": "鸡蛋 JD2612",
+          "change": -792
+        },
+        {
+          "side": "减多",
+          "org": "东方财富期货",
+          "label": "生猪 LH2701",
+          "change": -670
+        },
+        {
+          "side": "减多",
+          "org": "东方财富期货",
+          "label": "苹果 AP2701",
+          "change": -636
+        },
+        {
+          "side": "减空",
+          "org": "平安期货",
+          "label": "30年期国债期货 TL2612",
+          "change": -469
+        },
+        {
+          "side": "减多",
+          "org": "平安期货",
+          "label": "氧化铝 AO2701",
+          "change": -376
+        }
+      ]
+    },
+    {
+      "key": "inst",
+      "title": "四大机构",
+      "blurb": "客户里有量化、套保和产业，方向要分开看",
+      "listed": 537,
+      "add": [
+        {
+          "side": "加空",
+          "org": "中信期货",
+          "label": "玻璃 FG2701",
+          "change": 23274
+        },
+        {
+          "side": "加多",
+          "org": "东证期货",
+          "label": "豆粕 M2701",
+          "change": 15180
+        },
+        {
+          "side": "加多",
+          "org": "东证期货",
+          "label": "甲醇 MA2701",
+          "change": 10558
+        },
+        {
+          "side": "加空",
+          "org": "东证期货",
+          "label": "玻璃 FG2701",
+          "change": 9383
+        },
+        {
+          "side": "加多",
+          "org": "银河期货",
+          "label": "豆粕 M2701",
+          "change": 9027
+        },
+        {
+          "side": "加空",
+          "org": "银河期货",
+          "label": "玉米 C2701",
+          "change": 8055
+        },
+        {
+          "side": "加空",
+          "org": "国泰君安期货",
+          "label": "玻璃 FG2701",
+          "change": 7663
+        },
+        {
+          "side": "加多",
+          "org": "银河期货",
+          "label": "热轧卷板 HC2701",
+          "change": 6211
+        },
+        {
+          "side": "加多",
+          "org": "中信期货",
+          "label": "PVC V2701",
+          "change": 6127
+        },
+        {
+          "side": "加多",
+          "org": "国泰君安期货",
+          "label": "菜粕 RM2701",
+          "change": 5910
+        }
+      ],
+      "cut": [
+        {
+          "side": "减多",
+          "org": "国泰君安期货",
+          "label": "PTA TA2701",
+          "change": -16701
+        },
+        {
+          "side": "减多",
+          "org": "国泰君安期货",
+          "label": "豆粕 M2701",
+          "change": -15211
+        },
+        {
+          "side": "减空",
+          "org": "东证期货",
+          "label": "PTA TA2701",
+          "change": -13013
+        },
+        {
+          "side": "减空",
+          "org": "中信期货",
+          "label": "PTA TA2701",
+          "change": -12280
+        },
+        {
+          "side": "减多",
+          "org": "国泰君安期货",
+          "label": "玻璃 FG2701",
+          "change": -8540
+        },
+        {
+          "side": "减多",
+          "org": "中信期货",
+          "label": "苯乙烯 EB2611",
+          "change": -8335
+        },
+        {
+          "side": "减空",
+          "org": "中信期货",
+          "label": "PVC V2701",
+          "change": -8227
+        },
+        {
+          "side": "减空",
+          "org": "东证期货",
+          "label": "PVC V2701",
+          "change": -6959
+        },
+        {
+          "side": "减多",
+          "org": "银河期货",
+          "label": "纯碱 SA2701",
+          "change": -6662
+        },
+        {
+          "side": "减多",
+          "org": "中信期货",
+          "label": "纯碱 SA2701",
+          "change": -6551
+        }
+      ]
+    },
+    {
+      "key": "foreign",
+      "title": "三大外资",
+      "blurb": "主攻和外盘有关的商品",
+      "listed": 80,
+      "add": [
+        {
+          "side": "加空",
+          "org": "高盛期货",
+          "label": "菜粕 RM2701",
+          "change": 4576
+        },
+        {
+          "side": "加多",
+          "org": "高盛期货",
+          "label": "聚丙烯 PP2701",
+          "change": 3937
+        },
+        {
+          "side": "加多",
+          "org": "高盛期货",
+          "label": "甲醇 MA2701",
+          "change": 3616
+        },
+        {
+          "side": "加多",
+          "org": "高盛期货",
+          "label": "豆油 Y2701",
+          "change": 3115
+        },
+        {
+          "side": "加空",
+          "org": "高盛期货",
+          "label": "玻璃 FG2701",
+          "change": 2926
+        },
+        {
+          "side": "加空",
+          "org": "高盛期货",
+          "label": "PVC V2701",
+          "change": 2369
+        },
+        {
+          "side": "加多",
+          "org": "高盛期货",
+          "label": "豆一 A2701",
+          "change": 1648
+        },
+        {
+          "side": "加空",
+          "org": "高盛期货",
+          "label": "白糖 SR2701",
+          "change": 1220
+        },
+        {
+          "side": "加多",
+          "org": "摩根大通期货",
+          "label": "豆一 A2701",
+          "change": 1119
+        },
+        {
+          "side": "加多",
+          "org": "高盛期货",
+          "label": "沪铝 AL2612",
+          "change": 1108
+        }
+      ],
+      "cut": [
+        {
+          "side": "减空",
+          "org": "高盛期货",
+          "label": "螺纹钢 RB2701",
+          "change": -8818
+        },
+        {
+          "side": "减空",
+          "org": "高盛期货",
+          "label": "热轧卷板 HC2701",
+          "change": -7969
+        },
+        {
+          "side": "减多",
+          "org": "高盛期货",
+          "label": "塑料 L2701",
+          "change": -7830
+        },
+        {
+          "side": "减多",
+          "org": "摩根大通期货",
+          "label": "豆粕 M2701",
+          "change": -7519
+        },
+        {
+          "side": "减空",
+          "org": "高盛期货",
+          "label": "纯碱 SA2701",
+          "change": -5901
+        },
+        {
+          "side": "减多",
+          "org": "高盛期货",
+          "label": "豆粕 M2701",
+          "change": -5264
+        },
+        {
+          "side": "减多",
+          "org": "摩根大通期货",
+          "label": "棕榈油 P2701",
+          "change": -3985
+        },
+        {
+          "side": "减多",
+          "org": "高盛期货",
+          "label": "菜粕 RM2701",
+          "change": -3225
+        },
+        {
+          "side": "减多",
+          "org": "高盛期货",
+          "label": "菜油 OI2701",
+          "change": -2898
+        },
+        {
+          "side": "减空",
+          "org": "摩根大通期货",
+          "label": "沪镍 NI2612",
+          "change": -2476
+        }
+      ]
+    }
+  ]
+}
